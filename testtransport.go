@@ -23,7 +23,7 @@ type RequestTester struct {
 	Host        string
 	ContentType string
 	Payload     []byte
-	Response    *http.ReadResponse
+	Response    *http.Response
 }
 
 // Check compares expected values with the req parameter
