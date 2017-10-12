@@ -23,6 +23,7 @@ type RequestTester struct {
 	Host        string
 	ContentType string
 	Payload     []byte
+	Response    *http.ReadResponse
 }
 
 // Check compares expected values with the req parameter
@@ -77,6 +78,11 @@ func (tx *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	switch t := t.(type) {
+	case *RequestTester:
+		if err := t.Check(req); err != nil {
+			return nil, err
+		}
+		return t.Response, nil
 	case *http.Response:
 		return t, nil
 	case func(req *http.Request) (*http.Response, error):
