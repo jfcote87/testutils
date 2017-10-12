@@ -14,6 +14,50 @@ import (
 	"net/http"
 )
 
+// RequestTester contains expected values for checking against request
+type RequestTester struct {
+	Path        string
+	Auth        string
+	Method      string
+	Query       string
+	Host        string
+	ContentType string
+	Payload     []byte
+}
+
+// Check compares expected values with the req parameter
+func (r RequestTester) Check(req *http.Request) error {
+	if r.Path > "" && r.Path != req.URL.Path {
+		return fmt.Errorf("expected request path %s; go %s", r.Path, req.URL.Path)
+	}
+	if r.Auth > "" && r.Auth != req.Header.Get("Authorization") {
+		return fmt.Errorf("expecte auth header %s; got %s", r.Auth, req.Header.Get("Authorization"))
+	}
+	if r.Method > "" && r.Method != req.Method {
+		return fmt.Errorf("expected method %s; got %s", r.Method, req.Method)
+	}
+	if r.Query > "" && r.Query != req.URL.RawQuery {
+		return fmt.Errorf("expected query args %s; got %s", r.Query, req.URL.RawQuery)
+	}
+	if r.Host > "" && r.Host != req.URL.Host {
+		return fmt.Errorf("expected host %s; got %s", r.Host, req.URL.Host)
+	}
+	if r.ContentType > "" && r.ContentType != req.Header.Get("ContentType") {
+		return fmt.Errorf("expected content-type %s; got %s", r.ContentType, req.Header.Get("ContentType"))
+	}
+	if len(r.Payload) > 0 {
+		b, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			return fmt.Errorf("unable to read request body: %v", err)
+		}
+		if bytes.Compare(b, r.Payload) != 0 {
+			return fmt.Errorf("expected body %s; got %s", string(r.Payload), string(b))
+		}
+
+	}
+	return nil
+}
+
 // Transport contains an array of http.Response, handler funcs and errors
 // that help create an http request test
 type Transport struct {
@@ -51,12 +95,8 @@ func (tx *Transport) Add(val interface{}) {
 	return
 }
 
-// AddResponse creates a response to the queue
-func (tx *Transport) AddResponse(status int, body []byte, header http.Header) {
-	tx.Add(makeResponse(status, body, header))
-}
-
-func makeResponse(status int, body []byte, header http.Header) *http.Response {
+// MakeResponse creates an *http.Response for later processing
+func MakeResponse(status int, body []byte, header http.Header) *http.Response {
 	return &http.Response{
 		Body:          ioutil.NopCloser(bytes.NewReader(body)),
 		StatusCode:    status,
