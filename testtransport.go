@@ -29,7 +29,7 @@ type RequestTester struct {
 // Check compares expected values with the req parameter
 func (r RequestTester) Check(req *http.Request) error {
 	if r.Path > "" && r.Path != req.URL.Path {
-		return fmt.Errorf("expected request path %s; go %s", r.Path, req.URL.Path)
+		return fmt.Errorf("expected request path %s; got %s", r.Path, req.URL.Path)
 	}
 	if r.Auth > "" && r.Auth != req.Header.Get("Authorization") {
 		return fmt.Errorf("expecte auth header %s; got %s", r.Auth, req.Header.Get("Authorization"))
